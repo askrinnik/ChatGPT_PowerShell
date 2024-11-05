@@ -27,22 +27,33 @@ function LogInformation {
 function CopyFolder {
     param (
         [string]$sourceFolder,
-        [string]$destinationFolder
+        [string]$fullDestinationFolder
     )
 
-    Copy-Item -Path $sourceFolder -Destination $destinationFolder -Recurse -Force
-    LogInformation "Copied directory $sourceFolder to $destinationFolder"
+    # Create a subfolder in the destination based on the source folder's name
+    $destinationSubFolder = Join-Path -Path $fullDestinationFolder -ChildPath (Split-Path -Leaf $sourceFolder)
+    Copy-Item -Path $sourceFolder -Destination $destinationSubFolder -Recurse -Force
+    LogInformation "Copied directory $sourceFolder to $destinationSubFolder"
 }
 
 # Function to copy files to the destination
 function CopyFiles {
     param (
-        [array]$files,
-        [string]$destinationFolder
+        [string]$sourcePath,
+        [string]$fullDestinationFolder
     )
 
-    foreach ($file in $files) {
-        $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $file.Name
+    # Retrieve files that match the path, including wildcards
+    $sourceFiles = Get-ChildItem -Path $sourcePath -File -ErrorAction SilentlyContinue
+
+    if ($null -eq $sourceFiles) {
+        LogInformation "No files matched for path: $sourcePath"
+        return
+    }
+
+    # Copy each file to the destination folder
+    foreach ($file in $sourceFiles) {
+        $destinationFilePath = Join-Path -Path $fullDestinationFolder -ChildPath $file.Name
         Copy-Item -Path $file.FullName -Destination $destinationFilePath -Force
         LogInformation "Copied file $($file.FullName) to $destinationFilePath"
     }
@@ -56,20 +67,11 @@ function ProcessSourcePath {
     )
 
     if (Test-Path -Path $expandedSourcePath -PathType Container) {
-        # If expandedSourcePath is a directory, copy entire directory to destination
-        $destinationSubFolder = Join-Path -Path $fullDestinationFolder -ChildPath (Split-Path -Leaf $expandedSourcePath)
-        CopyFolder -sourceFolder $expandedSourcePath -destinationFolder $destinationSubFolder
+        # If expandedSourcePath is a directory, call CopyFolder
+        CopyFolder -sourceFolder $expandedSourcePath -fullDestinationFolder $fullDestinationFolder
     } else {
-        # Handle wildcards or specific files in the expanded source path
-        $sourceFiles = Get-ChildItem -Path $expandedSourcePath -File -ErrorAction SilentlyContinue
-
-        if ($null -eq $sourceFiles) {
-            LogInformation "No files matched for path: $expandedSourcePath"
-            return
-        }
-
-        # Copy matched files
-        CopyFiles -files $sourceFiles -destinationFolder $fullDestinationFolder
+        # Otherwise, treat it as a file or wildcard path and call CopyFiles
+        CopyFiles -sourcePath $expandedSourcePath -fullDestinationFolder $fullDestinationFolder
     }
 }
 
