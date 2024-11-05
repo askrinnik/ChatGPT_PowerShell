@@ -15,6 +15,39 @@ function Expand-PathWithEnvVars {
     return [Environment]::ExpandEnvironmentVariables($path)
 }
 
+# Function to log information messages
+function LogInformation {
+    param (
+        [string]$message
+    )
+    Write-Host $message
+}
+
+# Function to copy an entire folder to the destination
+function CopyFolder {
+    param (
+        [string]$sourceFolder,
+        [string]$destinationFolder
+    )
+
+    Copy-Item -Path $sourceFolder -Destination $destinationFolder -Recurse -Force
+    LogInformation "Copied directory $sourceFolder to $destinationFolder"
+}
+
+# Function to copy files to the destination
+function CopyFiles {
+    param (
+        [array]$files,
+        [string]$destinationFolder
+    )
+
+    foreach ($file in $files) {
+        $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $file.Name
+        Copy-Item -Path $file.FullName -Destination $destinationFilePath -Force
+        LogInformation "Copied file $($file.FullName) to $destinationFilePath"
+    }
+}
+
 # Function to process each source path and copy to the destination
 function ProcessSourcePath {
     param (
@@ -25,23 +58,18 @@ function ProcessSourcePath {
     if (Test-Path -Path $expandedSourcePath -PathType Container) {
         # If expandedSourcePath is a directory, copy entire directory to destination
         $destinationSubFolder = Join-Path -Path $fullDestinationFolder -ChildPath (Split-Path -Leaf $expandedSourcePath)
-        Copy-Item -Path $expandedSourcePath -Destination $destinationSubFolder -Recurse -Force
-        Write-Host "Copied directory $expandedSourcePath to $destinationSubFolder"
+        CopyFolder -sourceFolder $expandedSourcePath -destinationFolder $destinationSubFolder
     } else {
         # Handle wildcards or specific files in the expanded source path
         $sourceFiles = Get-ChildItem -Path $expandedSourcePath -File -ErrorAction SilentlyContinue
 
         if ($null -eq $sourceFiles) {
-            Write-Host "No files matched for path: $expandedSourcePath"
+            LogInformation "No files matched for path: $expandedSourcePath"
             return
         }
 
-        foreach ($file in $sourceFiles) {
-            # Copy each file to the destination folder
-            $destinationFilePath = Join-Path -Path $fullDestinationFolder -ChildPath $file.Name
-            Copy-Item -Path $file.FullName -Destination $destinationFilePath -Force
-            Write-Host "Copied file $($file.FullName) to $destinationFilePath"
-        }
+        # Copy matched files
+        CopyFiles -files $sourceFiles -destinationFolder $fullDestinationFolder
     }
 }
 
