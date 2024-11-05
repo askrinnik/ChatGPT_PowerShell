@@ -15,14 +15,13 @@ function Expand-PathWithEnvVars {
     return [Environment]::ExpandEnvironmentVariables($path)
 }
 
-# Load YAML file and parse it
-$yamlContent = Get-Content -Path $packageFiles -Raw
+# Function to process each destination folder and its associated file paths
+function ProcessDestinationFolder {
+    param (
+        [string]$destinationFolder,
+        [array]$sourcePaths
+    )
 
-# Parse YAML to Hashtable
-$parsedYaml = ConvertFrom-Yaml -Yaml $yamlContent
-
-# Process each destination and its associated file paths
-foreach ($destinationFolder in $parsedYaml.Keys) {
     # Combine the root destination folder with the YAML-specified folder
     $fullDestinationFolder = Join-Path -Path $destinationRootFolder -ChildPath $destinationFolder
 
@@ -30,9 +29,6 @@ foreach ($destinationFolder in $parsedYaml.Keys) {
     if (!(Test-Path -Path $fullDestinationFolder)) {
         New-Item -ItemType Directory -Path $fullDestinationFolder -Force
     }
-
-    # Get each source path from YAML
-    $sourcePaths = $parsedYaml[$destinationFolder]
 
     foreach ($sourcePath in $sourcePaths) {
         # Expand environment variables in the source path
@@ -60,4 +56,14 @@ foreach ($destinationFolder in $parsedYaml.Keys) {
             }
         }
     }
+}
+
+# Load YAML file and parse it
+$yamlContent = Get-Content -Path $packageFiles -Raw
+$parsedYaml = ConvertFrom-Yaml -Yaml $yamlContent
+
+# Process each destination folder in the YAML file
+foreach ($destinationFolder in $parsedYaml.Keys) {
+    $sourcePaths = $parsedYaml[$destinationFolder]
+    ProcessDestinationFolder -destinationFolder $destinationFolder -sourcePaths $sourcePaths
 }
