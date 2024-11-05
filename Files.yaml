@@ -1,3 +1,5 @@
 c:\InstallPackage\RMP\BIN:
   - C:\output\Debug\Bin\AccountCreditRequestPlugin.dll
   - C:\output\Debug\Bin\AccountImportExport.*
+c:\InstallPackage\RMP\Extensions:
+  - C:\dev\MetraNetDev\RMP\Extensions\Account  
