@@ -97,12 +97,23 @@ function ProcessDestinationFolder {
     }
 }
 
-# Load YAML file and parse it
-$yamlContent = Get-Content -Path $packageFiles -Raw
-$parsedYaml = ConvertFrom-Yaml -Yaml $yamlContent
+# Function to process the YAML package file
+function ProcessPackageFile {
+    param (
+        [string]$packageFilePath,
+        [string]$rootDestinationFolder
+    )
 
-# Process each destination folder in the YAML file
-foreach ($destinationFolder in $parsedYaml.Keys) {
-    $sourcePaths = $parsedYaml[$destinationFolder]
-    ProcessDestinationFolder -destinationFolder $destinationFolder -sourcePaths $sourcePaths
+    # Load YAML file and parse it
+    $yamlContent = Get-Content -Path $packageFilePath -Raw
+    $parsedYaml = ConvertFrom-Yaml -Yaml $yamlContent
+
+    # Process each destination folder in the YAML file
+    foreach ($destinationFolder in $parsedYaml.Keys) {
+        $sourcePaths = $parsedYaml[$destinationFolder]
+        ProcessDestinationFolder -destinationFolder $destinationFolder -sourcePaths $sourcePaths
+    }
 }
+
+# Call the main processing function
+ProcessPackageFile -packageFilePath $packageFiles -rootDestinationFolder $destinationRootFolder
