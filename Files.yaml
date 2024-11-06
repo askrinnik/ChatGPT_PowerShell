@@ -1,5 +1,9 @@
 RMP\BIN:
-  - '%MTRMPBIN%\AccountCreditRequestPlugin.dll'
-  - '%MTRMPBIN%\AccountImportExport.*'
+  SourceFolder: '%MTRMPBIN%'
+  Files:
+    - AccountCreditRequestPlugin.dll
+    - AccountImportExport.*
 RMP\Extensions:
-  - '%RMPDIR%\Extensions\Account'
+  SourceFolder: '%RMPDIR%'
+  Files:
+    - Extensions\Account

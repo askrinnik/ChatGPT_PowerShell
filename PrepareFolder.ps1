@@ -79,6 +79,7 @@ function ProcessSourcePath {
 function ProcessDestinationFolder {
     param (
         [string]$destinationFolder,
+        [string]$sourceFolder,
         [array]$sourcePaths
     )
 
@@ -91,8 +92,8 @@ function ProcessDestinationFolder {
     }
 
     foreach ($sourcePath in $sourcePaths) {
-        # Expand environment variables in the source path
-        $expandedSourcePath = Expand-PathWithEnvVars -path $sourcePath
+        # Combine the source folder with each file path, expanding environment variables
+        $expandedSourcePath = Expand-PathWithEnvVars -path (Join-Path -Path $sourceFolder -ChildPath $sourcePath)
         ProcessSourcePath -expandedSourcePath $expandedSourcePath -fullDestinationFolder $fullDestinationFolder
     }
 }
@@ -110,8 +111,13 @@ function ProcessPackageFile {
 
     # Process each destination folder in the YAML file
     foreach ($destinationFolder in $parsedYaml.Keys) {
-        $sourcePaths = $parsedYaml[$destinationFolder]
-        ProcessDestinationFolder -destinationFolder $destinationFolder -sourcePaths $sourcePaths
+        $entry = $parsedYaml[$destinationFolder]
+        
+        # Read SourceFolder and Files entries from YAML
+        $sourceFolder = $entry.SourceFolder
+        $sourcePaths = $entry.Files
+
+        ProcessDestinationFolder -destinationFolder $destinationFolder -sourceFolder $sourceFolder -sourcePaths $sourcePaths
     }
 }
 
